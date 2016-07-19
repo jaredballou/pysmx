@@ -305,6 +305,10 @@ class SourceModNatives(object):
         return None
 
     @native
+    def CreateConVar(self, params):
+        self.runtime.add_cvar(params=params)
+
+    @native
     def PrintToServer(self, params):
         fmt = self.amx._local_to_string(params[1])
         out = atcprintf(self.amx, fmt, params, 2)
