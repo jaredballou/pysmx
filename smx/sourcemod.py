@@ -1,23 +1,24 @@
-from functools import wraps
 import re
+import time
 from ctypes import *
-from .smxdefs import *
-from .newstruct import cast_value
+from functools import wraps
+
+from smx.engine import engine_time
+from smx.definitions import *
+from smx.exceptions import SourcePawnStringFormatError
+from smx.struct import cast_value
 
 __all__ = ['SourceModNatives', 'SourceModSystem']
 
 
 RGX_NUMBER = re.compile(r'[-+]?\d+')
 
-FMT_LADJUST     = 0x00000004 # left adjustment
-FMT_ZEROPAD     = 0x00000080 # zero (as opposed to blank) pad
-FMT_UPPERDIGITS = 0x00000200 # make alpha digits uppercase
+FMT_LADJUST     = 0x00000004  # left adjustment
+FMT_ZEROPAD     = 0x00000080  # zero (as opposed to blank) pad
+FMT_UPPERDIGITS = 0x00000200  # make alpha digits uppercase
 
 NULL = 0
 
-
-class SourcePawnStringFormatError(SourcePawnPluginNativeError):
-    pass
 
 def _check_fmt_args(x, arg, args):
     if (arg + x) > args:
@@ -29,7 +30,8 @@ def _check_fmt_args(x, arg, args):
 def has_flag(v, flag):
     return (v & flag) == flag
 def has_flags(v, flags):
-    return all(map(lambda f: has_flag(v,f), flags))
+    # TODO: use generator to allow for early escape (profile first)
+    return all(map(lambda f: has_flag(v, f), flags))
 
 
 def atoi(s, length=False):
@@ -303,6 +305,10 @@ class SourceModNatives(object):
         return None
 
     @native
+    def CreateConVar(self, params):
+        self.runtime.add_cvar(params=params)
+
+    @native
     def PrintToServer(self, params):
         fmt = self.amx._local_to_string(params[1])
         out = atcprintf(self.amx, fmt, params, 2)
@@ -353,22 +359,32 @@ class SourceModTimers(object):
         @param  sys: The SourceMod system emulator owning these natives
         """
         self.sys = sys
+        self._timers = []
 
     def create_timer(self, interval, callback, data, flags):
-        """
-        BAD BAD BAD BAD BAD BAD BAD BAD
-        RACE CONDITION GALORE
-        We cannot rely on Python's timers, as they can fire when other code is
-        being executed by the AMX. So we'll have to implement our own game
-        ticks, checking the timers ourselves at the top of each frame.
-        """
-        import threading
-
         def timer_callback():
+            # XXX: call this enter_frame instead?
+            self.sys.runtime.amx._dummy_frame()
             self.sys.runtime.call_function(callback, data)
 
-        timer = threading.Timer(interval, timer_callback)
-        timer.start()
+        # TODO: repeating timers
+        self._timers.append((engine_time() + interval, timer_callback))
+
+    def has_timers(self):
+        return bool(self._timers)
+
+    def poll_for_timers(self):
+        while self.has_timers():
+            time.sleep(self.sys.interval_per_tick)
+            self.sys.tick()
+
+            to_call = [f for call_after, f in self._timers
+                       if self.sys.last_tick > call_after]
+            self._timers = [(call_after, f) for call_after, f in self._timers
+                            if self.sys.last_tick <= call_after]
+
+            for callback in to_call:
+                callback()
 
 
 class SourceModSystem(object):
@@ -376,7 +392,7 @@ class SourceModSystem(object):
 
     def __init__(self, amx):
         """
-        @type   amx: smx.smxexec.SourcePawnAbstractMachine
+        @type   amx: smx.vm.SourcePawnAbstractMachine
         @param  amx: The abstract machine owning these natives
         """
         self.amx = amx
@@ -388,7 +404,7 @@ class SourceModSystem(object):
 
         self.tickrate = 66
         self.interval_per_tick = 1.0 / self.tickrate
+        self.last_tick = None
 
-    def game_frame(self):
-        pass
-
+    def tick(self):
+        self.last_tick = engine_time()
