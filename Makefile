@@ -1,6 +1,6 @@
 # Makefile for PySMX module
 
-MODULE = pysmx
+MODULE = smx
 TEST_VERBOSITY = 2
 TEST_DIR = test
 TEST_COMMAND = "py.test"
