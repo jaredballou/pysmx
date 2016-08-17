@@ -550,58 +550,12 @@ class SourcePawnPluginRuntime(object):
         self.amx = SourcePawnAbstractMachine(self, self.plugin)
 
         self.pubfuncs = {}
-        self.cvars = {}
 
         self.last_tick = None
 
         # Saves all the lines printed to the server console
         self.console = [] # list((datetime, msg_str))
         self.console_redirect = sys.stdout
-
-    def add_cvar(self, name=None, value=None, description=None, flags=None, params=None):
-        """
-        @type   name: str
-        @param  name: CVAR name
-        @type   value: str
-        @param  value: CVAR default value
-        @type   description: str
-        @param  description: CVAR description
-        @type   flags: str
-        @param  flags: CVAR flags
-        @type   params: list
-        @param  params: Entire parameter list for function call
-        """
-        if name in self.cvars.keys():
-            return
-	if not params is None:
-		name=params[1]
-		value=params[2]
-		description=params[3]
-		flags=params[4]
-        self.cvars[name] = {'value': value, 'description': description, 'flags': flags}
-
-    def get_cvar(self, name, value=None, description=None, flags=None, field=None):
-        """
-        @type   name: str
-        @param  name: CVAR name
-        @type   value: str
-        @param  value: CVAR default value
-        @type   description: str
-        @param  description: CVAR description
-        @type   flags: str
-        @param  flags: CVAR flags
-        @type   field: str
-        @param  field: Select individual field to return, rather than complete CVAR dict
-        """
-
-        cvar = {'value': value, 'description': description, 'flags': flags}
-        if name in self.cvars.keys():
-            for key,val in self.cvars[name].iteritems():
-                if val is not None:
-                    cvar[key] = val
-        if not field is None and field in cvar.keys():
-            return cvar[field]
-        return cvar
 
     def printf(self, msg):
         self.console.append((datetime.now(), msg))
