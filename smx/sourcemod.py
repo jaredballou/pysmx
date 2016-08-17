@@ -368,11 +368,148 @@ class SourceModNatives(object):
         return self.sys.handles.new_handle(cvar)
 
     @native
+    def FindConVar(self, params):
+        """native ConVar FindConVar(const char[] name)"""
+        name = self.amx._local_to_string(params[1])
+        if name in self.sys.convars:
+            return name
+#self.sys.convars[name]
+
+
+    @native
     def GetConVarInt(self, params):
         handle = params[1]
         cvar = self.sys.handles[handle]
         return int(cvar.value)
 
+    @native
+    def GetConVarFloat(self, params):
+        handle = params[1]
+        cvar = self.sys.handles[handle]
+        return float(cvar.value)
+
+    @native
+    def GetConVarBool(self, params):
+        handle = params[1]
+        cvar = self.sys.handles[handle]
+        return bool(cvar.value)
+
+    @native
+    def GetConVarString(self, params):
+        handle = params[1]
+        value = params[2]
+        maxlength = params[3]
+        cvar = self.sys.handles[handle]
+        value = self.amx._local_to_string(cvar.value)
+
+    @native
+    def RegServerCmd(self, params):
+        cmd = self.amx._local_to_string(params[1])
+        callback = params[2]
+        description = self.amx._local_to_string(params[3])
+        flags = params[4]
+        self.printf('RegServerCmd("%s", %s, "%s", %s)' % (cmd, callback, description, flags))
+        #servercmd = ServerCmd(cmd, callback, description, flags)
+        #self.sys.commands['Server'][name] = servercmd
+
+    @native
+    def RegAdminCmd(self, params):
+        cmd = self.amx._local_to_string(params[1])
+        callback = params[2]
+        adminflags = params[3]
+        description = self.amx._local_to_string(params[4])
+        group = self.amx._local_to_string(params[5])
+        flags = params[6]
+        self.printf('RegAdminCmd("%s", %s, %s, "%s", %s, %s)' % (cmd, callback, adminflags, description, group, flags))
+
+    @native
+    def RegConsoleCmd(self, params):
+        cmd = self.amx._local_to_string(params[1])
+        callback = self.amx._local_to_string(params[2])
+        description = self.amx._local_to_string(params[3])
+        flags = params[4]
+        self.printf('RegConsoleCmd("%s", %s, "%s", %s)' % (cmd, callback, description, flags))
+
+    @native
+    def HookEvent(self, params):
+        """native void HookEvent(const char[] name, EventHook callback, EventHookMode mode=EventHookMode_Post)"""
+        name = self.amx._local_to_string(params[1])
+        callback = params[2]
+        mode = params[3]
+        self.printf('HookEvent("%s", %s, %s)' % (name, callback, mode))
+
+    @native
+    def HookEventEx(self, params):
+        """native bool HookEventEx(const char[] name, EventHook callback, EventHookMode mode=EventHookMode_Post)"""
+        name = self.amx._local_to_string(params[1])
+        callback = params[2]
+        mode = params[3]
+        self.printf('HookEventEx("%s", %s, %s)' % (name, callback, mode))
+
+    @native
+    def UnhookEvent(self, params):
+        """native void UnhookEvent(const char[] name, EventHook callback, EventHookMode mode=EventHookMode_Post)"""
+        name = self.amx._local_to_string(params[1])
+        callback = params[2]
+        mode = params[3]
+        self.printf('UnhookEvent("%s", %s, %s)' % (name, callback, mode))
+
+    @native
+    def FindSendPropInfo(self, params):
+        """native int FindSendPropInfo(const char[] cls, const char[] prop, PropFieldType &type=view_as<PropFieldType>(0), int &num_bits=0, int &local_offset=0)"""
+        cls = self.amx._local_to_string(params[1])
+        prop = self.amx._local_to_string(params[2])
+        type = params[3]
+        num_bits = int(params[4])
+        local_offset = int(params[5])
+        self.printf('FindSendPropInfo("%s", "%s", %s, %d, %d)' % (cls, prop, type, num_bits, local_offset))
+        return 0
+
+    @native
+    def LibraryExists(self, params):
+        """native bool LibraryExists(const char[] name)"""
+        name = self.amx._local_to_string(params[1])
+        self.printf('LibraryExists("%s")' % name)
+        return True
+
+    @native
+    def GetPluginFilename(self, params):
+        """native void GetPluginFilename(Handle plugin, char[] buffer, int maxlength)"""
+        plugin = params[1]
+        #self.sys.handles[params[1]]
+        buffer = params[2]
+        maxlength = int(params[2])
+        self.printf('GetPluginFilename(%s, %s, %d)' % (plugin, buffer, maxlength))
+
+    @native
+    def strlen(self, params):
+        """native int strlen(const char[] str)"""
+        return len(str(params[1]))
+
+    @native
+    def AutoExecConfig(self, params):
+        """native void AutoExecConfig(bool autoCreate=true, const char[] name="", const char[] folder="sourcemod")"""
+        autoCreate = bool(params[1])
+        name = self.amx._local_to_string(params[2])
+        folder = self.amx._local_to_string(params[3]) or "sourcemod"
+        self.printf('AutoExecConfig(%d, "%s", "%s")' % (autoCreate, name, folder))
+        
+        
+        
+
+        """native Event CreateEvent(const char[] name, bool force=false)"""
+        """native void FireEvent(Handle event, bool dontBroadcast=false)"""
+        """native void CancelCreatedEvent(Handle event)"""
+        """native bool GetEventBool(Handle event, const char[] key, bool defValue=false)"""
+        """native void SetEventBool(Handle event, const char[] key, bool value)"""
+        """native int GetEventInt(Handle event, const char[] key, int defValue=0)"""
+        """native void SetEventInt(Handle event, const char[] key, int value)"""
+        """native float GetEventFloat(Handle event, const char[] key, float defValue=0.0)"""
+        """native void SetEventFloat(Handle event, const char[] key, float value)"""
+        """native void GetEventString(Handle event, const char[] key, char[] value, int maxlength, const char[] defvalue="")"""
+        """native void SetEventString(Handle event, const char[] key, const char[] value)"""
+        """native void GetEventName(Handle event, char[] name, int maxlength)"""
+        """native void SetEventBroadcast(Handle event, bool dontBroadcast)"""
 
 class SourceModHandles(object):
     """Emulates SourceMod's handles"""
@@ -455,6 +592,8 @@ class SourceModSystem(object):
         self.last_tick = None
 
         self.convars = {}
+        self.commands = {}
+        self.libraries = {}
 
     def tick(self):
         self.last_tick = engine_time()
